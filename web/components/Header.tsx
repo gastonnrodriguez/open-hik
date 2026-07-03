@@ -23,6 +23,9 @@ export default function Header({ right }: { right?: ReactNode }) {
           <Link href="/playback" className={path === "/playback" ? "active" : ""}>
             playback
           </Link>
+          <Link href="/settings" className={path === "/settings" ? "active" : ""}>
+            settings
+          </Link>
         </nav>
       </div>
       <div className="header-right">

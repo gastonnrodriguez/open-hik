@@ -50,6 +50,8 @@ wizard; no config files to edit.
 - **Rename cameras** — edit a camera's name in the grid; it's saved to the DVR itself.
 - **Snapshots** — save a full-quality JPEG of any camera with one click.
 - **Login** — the app is protected by the password you set in the wizard.
+- **Settings** — reconfigure the DVR connection anytime (IP, HTTP/RTSP ports,
+  credentials — handy when the DVR has no static IP) and change the app password.
 
 Everything beyond live video uses the DVR's ISAPI REST API through the web
 container. If ISAPI is unreachable the live wall still works and the extras

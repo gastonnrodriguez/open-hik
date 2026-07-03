@@ -53,6 +53,9 @@ una web limpia que abrís desde cualquier navegador de tu red. Un
 - **Renombrar cámaras** — editás el nombre en la grilla y se guarda en el DVR mismo.
 - **Snapshots** — guardá un JPEG de calidad completa de cualquier cámara con un click.
 - **Login** — la app queda protegida por la contraseña que definís en el wizard.
+- **Settings** — reconfigurá la conexión al DVR cuando quieras (IP, puertos
+  HTTP/RTSP, credenciales — útil cuando el DVR no tiene IP fija) y cambiá la
+  contraseña de la app.
 
 Todo lo que no es video en vivo usa la API ISAPI del DVR a través del contenedor
 web. Si ISAPI no está disponible, el vivo sigue funcionando y los extras degradan

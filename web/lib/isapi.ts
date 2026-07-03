@@ -20,7 +20,7 @@ export async function isapiFetch(
   const dvr = dvrOverride ?? getDvr();
   if (!dvr) return new Response("DVR not configured", { status: 503 });
   const { host, user, pass } = dvr;
-  const url = `http://${host}${path}`;
+  const url = `http://${host}:${dvr.httpPort || 80}${path}`;
   const method = init?.method || "GET";
 
   const first = await fetch(url, { ...init, cache: "no-store" });

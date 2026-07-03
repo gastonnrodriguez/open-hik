@@ -13,6 +13,8 @@ export interface DvrConfig {
   host: string;
   user: string; // stored raw (not URL-encoded)
   pass: string;
+  httpPort?: number; // ISAPI, default 80
+  rtspPort?: number; // default 554
 }
 
 export interface AppConfig {
@@ -52,5 +54,6 @@ export function getDvr(): DvrConfig | null {
 
 /** RTSP URL for a live channel or recording track, credentials embedded. */
 export function rtspUrl(dvr: DvrConfig, pathAndQuery: string): string {
-  return `rtsp://${encodeURIComponent(dvr.user)}:${encodeURIComponent(dvr.pass)}@${dvr.host}:554${pathAndQuery}`;
+  const port = dvr.rtspPort || 554;
+  return `rtsp://${encodeURIComponent(dvr.user)}:${encodeURIComponent(dvr.pass)}@${dvr.host}:${port}${pathAndQuery}`;
 }
