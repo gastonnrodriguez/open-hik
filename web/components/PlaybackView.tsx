@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Header from "@/components/Header";
+import PlaybackControls from "@/components/PlaybackControls";
 import StreamPlayer from "@/components/StreamPlayer";
 import { resolveGo2rtcUrl } from "@/lib/client";
 
@@ -30,6 +31,10 @@ function nextDay(date: string): string {
   return d.toISOString().slice(0, 10);
 }
 
+function addSeconds(iso: string, secs: number): string {
+  return new Date(Date.parse(iso) + secs * 1000).toISOString().slice(0, 19) + "Z";
+}
+
 export default function PlaybackView() {
   const [channels, setChannels] = useState<Record<string, string>>({});
   const [channel, setChannel] = useState(1);
@@ -39,6 +44,8 @@ export default function PlaybackView() {
   const [base, setBase] = useState<string | null>(null);
   const [playing, setPlaying] = useState<{ stream: string; clip: Clip } | null>(null);
   const [mode, setMode] = useState("");
+  const [anchor, setAnchor] = useState(0); // seconds into the clip where the stream starts
+  const [video, setVideo] = useState<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     resolveGo2rtcUrl().then(setBase);
@@ -66,24 +73,48 @@ export default function PlaybackView() {
       .catch((e: Error) => setError(e.message));
   }, [channel, date]);
 
-  const play = async (clip: Clip) => {
-    setPlaying(null);
-    setMode("");
-    try {
+  const anchorAt = useCallback(
+    async (clip: Clip, seconds: number) => {
       const res = await fetch("/api/playback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel, start: clip.start, end: clip.end }),
+        body: JSON.stringify({
+          channel,
+          start: addSeconds(clip.start, Math.floor(seconds)),
+          end: clip.end,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      setPlaying({ stream: data.name, clip });
+      return data.name as string;
+    },
+    [channel]
+  );
+
+  const play = async (clip: Clip) => {
+    setPlaying(null);
+    setMode("");
+    setAnchor(0);
+    try {
+      const name = await anchorAt(clip, 0);
+      setPlaying({ stream: name, clip });
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const seek = async (seconds: number) => {
+    if (!playing) return;
+    try {
+      await anchorAt(playing.clip, seconds);
+      setAnchor(seconds); // key change remounts the player against the new anchor
     } catch (e) {
       setError((e as Error).message);
     }
   };
 
   const onMode = useCallback((m: string) => setMode(m), []);
+  const onVideo = useCallback((v: HTMLVideoElement | null) => setVideo(v), []);
 
   const channelIds = Object.keys(channels).length > 0 ? Object.keys(channels) : ["1", "2", "3", "4"];
 
@@ -132,14 +163,28 @@ export default function PlaybackView() {
         <div className="player-pane">
           {playing && base ? (
             <>
-              <StreamPlayer base={base} name={playing.stream} controls onMode={onMode} />
-              <div className="osd">
-                <span className="ch">CH {String(channel).padStart(2, "0")}</span>
-                <span className="name">
-                  {channels[channel] || `cam-${channel}`} · {date} {hhmmss(playing.clip.start)}
-                </span>
-                <span className="state">{mode || "loading"}</span>
+              <div className="player-video">
+                <StreamPlayer
+                  key={`${playing.stream}-${anchor}`}
+                  base={base}
+                  name={playing.stream}
+                  onMode={onMode}
+                  onVideo={onVideo}
+                />
+                <div className="osd">
+                  <span className="ch">CH {String(channel).padStart(2, "0")}</span>
+                  <span className="name">
+                    {channels[channel] || `cam-${channel}`} · {date} {hhmmss(playing.clip.start)}
+                  </span>
+                  <span className="state">{mode || "loading"}</span>
+                </div>
               </div>
+              <PlaybackControls
+                video={video}
+                duration={(Date.parse(playing.clip.end) - Date.parse(playing.clip.start)) / 1000}
+                base={anchor}
+                onSeek={seek}
+              />
             </>
           ) : (
             <div className="player-hint">

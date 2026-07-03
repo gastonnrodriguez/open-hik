@@ -408,6 +408,64 @@ body {
   position: relative;
   background: #000;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.player-video {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ---------- playback transport bar ---------- */
+
+.pb-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  font-family: var(--font-osd), monospace;
+}
+
+.pb-controls button,
+.pb-controls select {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--font-osd), monospace;
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.pb-controls button:hover,
+.pb-controls select:hover {
+  border-color: var(--amber);
+}
+
+.pb-controls button:focus-visible,
+.pb-controls select:focus-visible,
+.pb-range:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 1px;
+}
+
+.pb-time {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pb-range {
+  flex: 1;
+  min-width: 60px;
+  accent-color: var(--amber);
+  cursor: pointer;
 }
 
 .player-hint {

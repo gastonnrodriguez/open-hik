@@ -7,6 +7,8 @@ interface Props {
   name: string;
   controls?: boolean;
   onMode?: (mode: string) => void;
+  /** Exposes the inner <video> element for custom playback controls. */
+  onVideo?: (video: HTMLVideoElement | null) => void;
 }
 
 /**
@@ -14,7 +16,7 @@ interface Props {
  * It negotiates WebRTC and falls back to MSE/HLS/MJPEG on its own.
  * `onMode` receives the component's state ("loading", "error", "RTC", "MSE"...).
  */
-export default function StreamPlayer({ base, name, controls = false, onMode }: Props) {
+export default function StreamPlayer({ base, name, controls = false, onMode, onVideo }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function StreamPlayer({ base, name, controls = false, onMode }: P
       if (player.video) {
         player.video.controls = controls;
         player.video.muted = true;
+        onVideo?.(player.video);
       }
 
       const modeDiv = el.querySelector(".mode");
@@ -56,8 +59,9 @@ export default function StreamPlayer({ base, name, controls = false, onMode }: P
       cancelled = true;
       observer?.disconnect();
       el?.remove();
+      onVideo?.(null);
     };
-  }, [name, base, controls, onMode]);
+  }, [name, base, controls, onMode, onVideo]);
 
   return <div ref={hostRef} style={{ position: "absolute", inset: 0 }} />;
 }

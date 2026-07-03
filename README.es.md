@@ -47,7 +47,11 @@ una web limpia que abrís desde cualquier navegador de tu red. Un
   snapshots de cada evento de movimiento que registró el DVR, **filtrable por
   personas o vehículos** en equipos AcuSense. Click para ver ese momento;
   descargalo como MP4.
-- **Reproducción de grabaciones** — navegá y reproducí lo grabado, por cámara y día.
+- **Reproducción de grabaciones** — navegá y reproducí lo grabado, por cámara y
+  día, con controles de transporte: play/pausa, cámara lenta (0.25x/0.5x),
+  botones de salto y línea de tiempo scrubbable. (El DVR transmite las
+  grabaciones a velocidad real, así que el avance rápido se hace saltando en
+  vez de reproducir a 2x.)
 - **Alertas en tiempo real** — movimiento/sabotaje/pérdida de video resaltan la
   cámara afectada al instante, directo del stream de alertas del DVR.
 - **Renombrar cámaras** — editás el nombre en la grilla y se guarda en el DVR mismo.

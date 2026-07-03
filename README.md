@@ -44,7 +44,10 @@ wizard; no config files to edit.
 - **Smart search** — pick a time range and get a grid of snapshots for every
   motion event the DVR logged, **filtered by people or vehicles** on AcuSense
   devices. Click one to watch that moment; download it as MP4.
-- **Recording playback** — browse and play what the DVR recorded, per camera and day.
+- **Recording playback** — browse and play what the DVR recorded, per camera and
+  day, with transport controls: play/pause, slow motion (0.25x/0.5x), skip
+  buttons and a scrubbable timeline. (The DVR streams recordings at real time,
+  so fast-forward is done by skipping rather than 2x playback.)
 - **Live event alerts** — motion/tamper/video-loss highlights the affected camera
   in real time, straight from the DVR's alert stream.
 - **Rename cameras** — edit a camera's name in the grid; it's saved to the DVR itself.
