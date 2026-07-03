@@ -1,0 +1,43 @@
+services:
+  go2rtc:
+    image: alexxit/go2rtc:latest
+    container_name: open-hik-go2rtc
+    restart: unless-stopped
+    ports:
+      - "1984:1984"       # API + MSE/WebSocket + web UI
+      - "8555:8555/tcp"   # WebRTC
+      - "8555:8555/udp"   # WebRTC
+    environment:
+      # optional .env pre-provisioning; the setup wizard works without it
+      - DVR_HOST=${DVR_HOST:-}
+      - DVR_USER=${DVR_USER:-}
+      - DVR_PASS=${DVR_PASS:-}
+    volumes:
+      # go2rtc persists API-added streams (with resolved credentials) into its
+      # config, so it runs against a runtime copy of the repo file.
+      - ./go2rtc/go2rtc.yaml:/config/template.yaml:ro
+    entrypoint:
+      ["sh", "-c", "cp /config/template.yaml /config/go2rtc.yaml && exec go2rtc -config /config/go2rtc.yaml"]
+
+  web:
+    build: ./web
+    container_name: open-hik-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Only needed when the browser can't reach go2rtc on <page-host>:1984
+      - GO2RTC_PUBLIC_URL=${GO2RTC_PUBLIC_URL:-}
+      - GO2RTC_INTERNAL_URL=http://go2rtc:1984
+      # ISAPI features: camera names, snapshots, events, recordings
+      - DVR_HOST=${DVR_HOST:-}
+      - DVR_USER=${DVR_USER:-}
+      - DVR_PASS=${DVR_PASS:-}
+      - OPENHIK_DATA_DIR=/data
+    volumes:
+      - openhik-data:/data
+    depends_on:
+      - go2rtc
+
+volumes:
+  openhik-data:
