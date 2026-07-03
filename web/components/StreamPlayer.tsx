@@ -36,8 +36,11 @@ export default function StreamPlayer({ base, name, controls = false, onMode, onV
         background: boolean;
         src: string;
         video?: HTMLVideoElement;
+        RECONNECT_TIMEOUT: number;
       };
       player.mode = "webrtc,mse,hls,mjpeg";
+      // default is 15s; recover quickly when a playback session is re-anchored
+      player.RECONNECT_TIMEOUT = 3000;
       player.background = true;
       player.src = new URL(`api/ws?src=${encodeURIComponent(name)}`, base).toString();
       host.appendChild(el);

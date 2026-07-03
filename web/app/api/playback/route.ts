@@ -41,6 +41,13 @@ export async function POST(req: Request) {
   const name = `playback-${channel}`;
 
   try {
+    // The DVR allows one playback session per channel: close the previous one
+    // (go2rtc tears down its RTSP producer) before re-anchoring, or the new
+    // DESCRIBE gets rejected.
+    await fetch(`${GO2RTC}/api/streams?src=${encodeURIComponent(name)}`, { method: "DELETE" }).catch(
+      () => {}
+    );
+    await new Promise((r) => setTimeout(r, 400));
     const res = await fetch(
       `${GO2RTC}/api/streams?name=${encodeURIComponent(name)}&src=${encodeURIComponent(src)}`,
       { method: "PUT" }
