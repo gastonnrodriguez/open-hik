@@ -43,6 +43,14 @@ una web limpia que abrís desde cualquier navegador de tu red. Un
   latencia menor a un segundo. La grilla usa los substreams para respetar el
   presupuesto de ancho de banda del DVR; pantalla completa (doble click) cambia
   automáticamente al main stream de calidad completa.
+- **Reordenar arrastrando** — agarrá el ícono de agarre de un recuadro y soltalo
+  sobre otro para reordenar la grilla, así las cámaras que cubren la misma zona
+  quedan una al lado de la otra. La disposición se guarda y se comparte entre
+  todos los dispositivos que abren la app.
+- **Funciona con cámaras H.265** — los navegadores no decodifican H.265/HEVC por
+  WebRTC ni MSE, así que go2rtc transcodifica los streams H.265 a H.264 bajo
+  demanda (los que ya son H.264 pasan sin tocar). Ver
+  [Solución de problemas](#solución-de-problemas) para ajustarlo o evitarlo.
 - **Búsqueda inteligente** — elegís un rango de tiempo y te muestra una grilla de
   snapshots de cada evento de movimiento que registró el DVR, **filtrable por
   personas o vehículos** en equipos AcuSense. Click para ver ese momento;
@@ -73,11 +81,18 @@ habilitado (puerto 554) en tu red.
 ```bash
 git clone https://github.com/gastonnrodriguez/open-hik.git
 cd open-hik
-docker compose up -d --build
+./scripts/up.sh --build
 ```
 
+`scripts/up.sh` es un envoltorio de `docker compose up -d` que autodetecta la IP
+LAN de esta máquina y se la pasa a go2rtc como candidate de WebRTC, para que **el
+vivo se vea desde otros dispositivos de la red**, no solo desde el host. Volvé a
+correrlo si te cambia la IP (DHCP). `docker compose up -d --build` también sirve,
+pero sin la IP los otros dispositivos caen a MSE (WebRTC necesita el candidate).
+
 Abrí `http://localhost:3000` (o `http://<ip-del-host>:3000` desde otra máquina)
-y seguí el wizard: contraseña para la app, datos del DVR, listo.
+y seguí el wizard: contraseña para la app, datos del DVR, listo. El header muestra
+la dirección que deben usar los otros dispositivos — click para copiarla.
 
 Probado con un iDS-7204HQHI-M1/S (firmware V4.70.102, web V4.0.1), pero debería
 funcionar con cualquier Hikvision que hable RTSP + ISAPI — es decir, casi todos.
@@ -100,6 +115,7 @@ volumen Docker con nombre). El `.env` es opcional:
 |---|---|
 | `DVR_HOST` / `DVR_USER` / `DVR_PASS` | Pre-cargar credenciales del DVR (URL-encodear caracteres especiales). El wizard las usa para prellenar. |
 | `GO2RTC_PUBLIC_URL` | Solo si el navegador no llega a go2rtc en `<host-de-la-página>:1984` (reverse proxy, etc.) |
+| `HOST_LAN_IP` | IP LAN anunciada como candidate de WebRTC para que otros dispositivos puedan ver. La completa `scripts/up.sh`; dejala vacía y se detecta sola. |
 
 Se recomienda un usuario *operator* de solo lectura en el DVR en vez de admin —
 aunque en ese caso el DVR no va a permitir renombrar cámaras desde la UI.
@@ -129,8 +145,20 @@ aunque en ese caso el DVR no va a permitir renombrar cámaras desde la UI.
 - **Las cámaras quedan en "loading"** — mirá el panel de diagnóstico de go2rtc en
   `http://<host>:1984`. Si go2rtc tampoco conecta, verificá credenciales y que
   RTSP esté habilitado en el DVR.
-- **Cámaras H.265 en Firefox** — Firefox no decodifica H.265; Chrome/Edge sí en
-  la mayoría del hardware. Usá Chrome/Edge o pasá los canales a H.264 en el DVR.
+- **Cámaras H.265 / HEVC** — ningún navegador decodifica H.265 por WebRTC ni MSE,
+  así que una cámara en H.265 no se ve en la mayoría de las máquinas (una PC con
+  HEVC por hardware quizás sí la reproduce — por eso pasa el clásico "acá anda y
+  allá no"). go2rtc transcodifica H.265 a H.264 automáticamente: los streams se
+  envuelven en `ffmpeg:...#video=h264` en `go2rtc/go2rtc.yaml`. El transcode es
+  bajo demanda (solo mientras alguien mira esa cámara) y liviano, pero para **cero**
+  CPU pasá el **sub-stream** de la cámara a H.264 en el DVR (*Configuración →
+  Vídeo/Audio*, por cámara — el ajuste es por canal, no global) y sacale el
+  prefijo `ffmpeg:`.
+- **Video cortado / a tirones en clientes por Wi-Fi** — re-encodear H.265→H.264 sin
+  tope de bitrate infla cada stream a ~2,5 Mbps (~10 Mbps para una grilla de 4),
+  que el Wi-Fi pierde. El bloque `ffmpeg` de `go2rtc.yaml` capa el bitrate del
+  H.264 (≈800 kbps sub / 2500 kbps main) y acorta el intervalo de keyframes para
+  que la pérdida se recupere rápido. Bajá más el `-maxrate` si tu Wi-Fi sigue justo.
 - **Contraseña con caracteres especiales en `.env`** — deben ir URL-encodeados
   (`@` → `%40`). El wizard no tiene esta restricción.
 

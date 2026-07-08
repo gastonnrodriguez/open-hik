@@ -41,6 +41,12 @@ wizard; no config files to edit.
 - **Live video wall** — every camera in a fullscreen grid, sub-second latency.
   The grid uses sub streams to respect the DVR's outgoing bandwidth budget;
   fullscreen (double-click) switches to the full-quality main stream.
+- **Drag to rearrange** — grab the grip handle on any tile and drop it on another
+  to reorder the grid, so cameras covering the same area sit side by side. The
+  layout is saved and shared across every device that opens the app.
+- **Works with H.265 cameras** — browsers can't decode H.265/HEVC over WebRTC or
+  MSE, so go2rtc transcodes H.265 streams to H.264 on demand (H.264 streams pass
+  through untouched). See [Troubleshooting](#troubleshooting) to tune or avoid it.
 - **Smart search** — pick a time range and get a grid of snapshots for every
   motion event the DVR logged, **filtered by people or vehicles** on AcuSense
   devices. Click one to watch that moment; download it as MP4.
@@ -68,11 +74,18 @@ enabled (port 554) on your network.
 ```bash
 git clone https://github.com/gastonnrodriguez/open-hik.git
 cd open-hik
-docker compose up -d --build
+./scripts/up.sh --build
 ```
 
+`scripts/up.sh` is a thin wrapper around `docker compose up -d` that auto-detects
+this machine's LAN IP and passes it to go2rtc as the WebRTC candidate, so **live
+view works from other devices on the network**, not just the host. Re-run it any
+time your IP changes (DHCP). Plain `docker compose up -d --build` also works, but
+without the LAN IP other devices fall back to MSE (WebRTC needs the candidate).
+
 Open `http://localhost:3000` (or `http://<host-ip>:3000` from another machine)
-and follow the wizard: create an app password, point it at your DVR, done.
+and follow the wizard: create an app password, point it at your DVR, done. The
+header shows the address other devices should use — click it to copy.
 
 Tested with an iDS-7204HQHI-M1/S (firmware V4.70.102, web V4.0.1), but it should
 work with any Hikvision device that speaks RTSP + ISAPI — which is practically
@@ -95,6 +108,7 @@ The wizard stores everything in `/data/openhik.json` inside the web container
 |---|---|
 | `DVR_HOST` / `DVR_USER` / `DVR_PASS` | Pre-provision DVR credentials (URL-encode special characters). The wizard prefills from these. |
 | `GO2RTC_PUBLIC_URL` | Only if the browser can't reach go2rtc at `<page-host>:1984` (reverse proxy, etc.) |
+| `HOST_LAN_IP` | LAN IP advertised as the WebRTC candidate so other devices can view. Auto-filled by `scripts/up.sh`; leave empty and it's detected for you. |
 
 A read-only *operator* DVR user is recommended over admin — though renaming
 cameras from the UI then won't be permitted by the DVR.
@@ -124,8 +138,19 @@ cameras from the UI then won't be permitted by the DVR.
 - **Tiles stay "loading"** — check go2rtc's own diagnostics UI at
   `http://<host>:1984`. If go2rtc can't connect either, verify credentials and
   that RTSP is enabled on the DVR.
-- **H.265 cameras on Firefox** — Firefox doesn't decode H.265; Chrome/Edge do on
-  most hardware. Either use Chrome/Edge or switch the channels to H.264 in the DVR.
+- **H.265 / HEVC cameras** — no browser decodes H.265 over WebRTC or MSE, so a
+  camera left on H.265 shows nothing on most machines (a PC with hardware HEVC
+  might play it, which is why "it works here but not there" happens). go2rtc
+  transcodes H.265 to H.264 automatically: streams are wrapped in
+  `ffmpeg:...#video=h264` in `go2rtc/go2rtc.yaml`. Transcoding is on demand (only
+  while someone watches that camera) and cheap, but for **zero** CPU switch the
+  camera's **sub-stream** to H.264 in the DVR (*Configuration → Video/Audio*, per
+  camera — the setting is per channel, not global) and drop its `ffmpeg:` prefix.
+- **Choppy / stuttering video on Wi-Fi clients** — re-encoding H.265→H.264 without
+  a bitrate cap balloons each stream to ~2.5 Mbps (~10 Mbps for a 4-camera grid),
+  which Wi-Fi drops. The `ffmpeg` block in `go2rtc.yaml` caps the H.264 bitrate
+  (≈800 kbps sub / 2500 kbps main) and shortens the keyframe interval so loss
+  recovers fast. Lower the `-maxrate` further if your Wi-Fi is still marginal.
 - **Password with special characters in `.env`** — must be URL-encoded
   (`@` → `%40`). The wizard doesn't have this restriction.
 
