@@ -127,6 +127,33 @@ body {
   color: var(--text);
 }
 
+.server-addr {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-osd), monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.server-addr:hover {
+  color: var(--text);
+}
+
+.server-addr-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #35c46a;
+  box-shadow: 0 0 6px #35c46a88;
+}
+
 /* ---------- video wall ---------- */
 
 .wall {

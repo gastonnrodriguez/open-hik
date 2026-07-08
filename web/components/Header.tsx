@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Clock from "@/components/Clock";
+import ServerAddress from "@/components/ServerAddress";
 import type { ReactNode } from "react";
 
 export default function Header({ right }: { right?: ReactNode }) {
@@ -30,6 +31,7 @@ export default function Header({ right }: { right?: ReactNode }) {
       </div>
       <div className="header-right">
         {right}
+        <ServerAddress />
         <Clock />
         <button
           className="logout-btn"

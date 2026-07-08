@@ -12,12 +12,28 @@ services:
       - DVR_HOST=${DVR_HOST:-}
       - DVR_USER=${DVR_USER:-}
       - DVR_PASS=${DVR_PASS:-}
+      # LAN IP of this machine, advertised as the WebRTC candidate so browsers on
+      # other devices can reach go2rtc. Auto-filled by scripts/up.sh; left empty
+      # WebRTC still works from localhost and other devices fall back to MSE.
+      - HOST_LAN_IP=${HOST_LAN_IP:-}
     volumes:
       # go2rtc persists API-added streams (with resolved credentials) into its
       # config, so it runs against a runtime copy of the repo file.
       - ./go2rtc/go2rtc.yaml:/config/template.yaml:ro
+    # Copy the template to a writable runtime config, then — only when HOST_LAN_IP
+    # is set — merge in a second config file that advertises it as the WebRTC
+    # candidate. go2rtc merges multiple -config files, so this avoids duplicate
+    # YAML keys and keeps the candidate out of the committed template.
     entrypoint:
-      ["sh", "-c", "cp /config/template.yaml /config/go2rtc.yaml && exec go2rtc -config /config/go2rtc.yaml"]
+      - sh
+      - -c
+      - |
+        cp /config/template.yaml /config/go2rtc.yaml
+        if [ -n "$$HOST_LAN_IP" ]; then
+          printf 'webrtc:\n  candidates:\n    - %s:8555\n' "$$HOST_LAN_IP" > /config/candidate.yaml
+          exec go2rtc -config /config/go2rtc.yaml -config /config/candidate.yaml
+        fi
+        exec go2rtc -config /config/go2rtc.yaml
 
   web:
     build: ./web
@@ -29,6 +45,9 @@ services:
       # Only needed when the browser can't reach go2rtc on <page-host>:1984
       - GO2RTC_PUBLIC_URL=${GO2RTC_PUBLIC_URL:-}
       - GO2RTC_INTERNAL_URL=http://go2rtc:1984
+      # Shown in the header so you can see/share the address to reach this server
+      # from other devices — even when viewing on localhost. Filled by scripts/up.sh.
+      - HOST_LAN_IP=${HOST_LAN_IP:-}
       # ISAPI features: camera names, snapshots, events, recordings
       - DVR_HOST=${DVR_HOST:-}
       - DVR_USER=${DVR_USER:-}

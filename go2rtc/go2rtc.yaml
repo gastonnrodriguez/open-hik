@@ -13,21 +13,40 @@ api:
   listen: ":1984"
   origin: "*"
 
+# Override go2rtc's built-in H264 transcode template to cap the bitrate. Without
+# a cap, re-encoding H265->H264 balloons to ~2.5 Mbps per sub stream (~10 Mbps for
+# the 4-camera grid), which saturates Wi-Fi clients and makes them stutter. The
+# cap keeps each stream small and Wi-Fi-friendly; -g 24 shortens the keyframe
+# interval so packet loss recovers in ~1s instead of freezing for ~4s.
+ffmpeg:
+  # Sub streams (grid, 4 at once) — small cap so the combined grid fits on Wi-Fi.
+  h264: "-codec:v libx264 -g 24 -profile:v high -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -b:v 800k -maxrate 800k -bufsize 1200k"
+  # Main streams (fullscreen, 1 at a time) — higher cap for 1080p; referenced as #video=hd.
+  hd: "-codec:v libx264 -g 24 -profile:v high -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -b:v 2500k -maxrate 2500k -bufsize 3500k"
+
 webrtc:
   listen: ":8555"
-  # For lowest latency from other devices on your LAN, uncomment and set
-  # the IP of the machine running open-hik:
-  # candidates:
-  #   - 192.168.1.50:8555
+  # The WebRTC `candidates` (the LAN IP browsers use to reach go2rtc) are injected
+  # at startup from the HOST_LAN_IP env var — see the entrypoint in
+  # docker-compose.yml, auto-filled by scripts/up.sh. Don't hardcode them here.
 
 # The grid uses sub streams (x02) to stay inside the DVR's outgoing bandwidth
 # budget; the web app switches to the "-hd" main stream in fullscreen.
+#
+# Browsers can't decode H265/HEVC over WebRTC or MSE (Chrome/Firefox especially),
+# so any camera whose DVR stream is H265 is wrapped in `ffmpeg:...#video=h264`,
+# which transcodes to H264 on demand (only while a client is watching it). Cameras
+# already delivering H264 from the DVR are used directly — no transcode, no CPU.
+# If you later switch a camera to H264 in the DVR, replace its `ffmpeg:` line with
+# the plain `rtsp://...` URL to drop the transcode.
 streams:
-  cam-1: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/102#backchannel=0
-  cam-2: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/202#backchannel=0
-  cam-3: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/302#backchannel=0
-  cam-4: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/402#backchannel=0
+  # Sub streams (grid) — all H265 on the DVR, so all transcoded.
+  cam-1: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/102#backchannel=0#video=h264
+  cam-2: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/202#backchannel=0#video=h264
+  cam-3: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/302#backchannel=0#video=h264
+  cam-4: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/402#backchannel=0#video=h264
+  # Main streams (fullscreen) — cam-1 is already H264 in the DVR, so direct.
   cam-1-hd: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/101#backchannel=0
-  cam-2-hd: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/201#backchannel=0
-  cam-3-hd: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/301#backchannel=0
-  cam-4-hd: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/401#backchannel=0
+  cam-2-hd: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/201#backchannel=0#video=hd
+  cam-3-hd: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/301#backchannel=0#video=hd
+  cam-4-hd: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/401#backchannel=0#video=hd
