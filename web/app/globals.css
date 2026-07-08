@@ -342,8 +342,9 @@ body {
 
 .drag-handle {
   cursor: grab;
-  font-size: 16px;
-  line-height: 1;
+  /* always faintly visible (unlike the hover-only action buttons) so the
+     reorder affordance is discoverable; goes fully opaque on tile hover */
+  opacity: 0.45;
 }
 
 .drag-handle:active {

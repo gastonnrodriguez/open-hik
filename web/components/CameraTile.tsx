@@ -133,7 +133,16 @@ export default function CameraTile({
             }}
             onDragEnd={() => onReorderEnd?.()}
           >
-            ⠿
+            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <g fill="currentColor">
+                <circle cx="5" cy="3" r="1.4" />
+                <circle cx="11" cy="3" r="1.4" />
+                <circle cx="5" cy="8" r="1.4" />
+                <circle cx="11" cy="8" r="1.4" />
+                <circle cx="5" cy="13" r="1.4" />
+                <circle cx="11" cy="13" r="1.4" />
+              </g>
+            </svg>
           </button>
         )}
         {channel !== null && (
