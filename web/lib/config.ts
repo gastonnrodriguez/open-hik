@@ -21,6 +21,7 @@ export interface AppConfig {
   dvr?: DvrConfig;
   adminHash?: string; // scrypt "salt:hash" hex
   secret?: string; // HMAC key for session cookies
+  gridOrder?: string[]; // live-wall stream order (stream names), set by drag-and-drop
 }
 
 export function loadConfig(): AppConfig {

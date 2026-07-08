@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CameraTile from "@/components/CameraTile";
 import Header from "@/components/Header";
 import { channelFromProducerUrl, resolveGo2rtcUrl } from "@/lib/client";
@@ -25,19 +25,26 @@ interface Go2rtcStream {
 export default function VideoWall() {
   const [status, setStatus] = useState<Status>({ kind: "loading" });
   const [liveMap, setLiveMap] = useState<Record<string, boolean>>({});
+  const [order, setOrder] = useState<string[]>([]);
+  const dragName = useRef<string | null>(null);
+  const [draggingName, setDraggingName] = useState<string | null>(null);
+  const [dragOverName, setDragOverName] = useState<string | null>(null);
   const { alerts, lastEvent } = useEvents();
 
   const load = useCallback(async () => {
     setStatus({ kind: "loading" });
     const base = await resolveGo2rtcUrl();
     try {
-      const [streamsRes, namesRes] = await Promise.all([
+      const [streamsRes, namesRes, orderRes] = await Promise.all([
         fetch(new URL("/api/streams", base)),
         fetch("/api/channels"),
+        fetch("/api/grid-order"),
       ]);
       if (!streamsRes.ok) throw new Error(`HTTP ${streamsRes.status}`);
       const streams: Record<string, Go2rtcStream> = await streamsRes.json();
       const names: Record<string, string> = namesRes.ok ? await namesRes.json() : {};
+      const saved: string[] = orderRes.ok ? (await orderRes.json()).order ?? [] : [];
+      setOrder(saved);
 
       const cameras: Camera[] = Object.keys(streams)
         .filter((name) => !name.startsWith("playback-") && !name.endsWith("-hd"))
@@ -88,7 +95,45 @@ export default function VideoWall() {
     }
   }, []);
 
-  const cameras = status.kind === "ready" ? status.cameras : [];
+  const loaded = status.kind === "ready" ? status.cameras : [];
+  // Apply the saved order: known streams first (in saved order), new streams
+  // (not yet ordered) keep their default position at the end.
+  const cameras = useMemo(() => {
+    if (order.length === 0) return loaded;
+    const rank = (n: string) => {
+      const i = order.indexOf(n);
+      return i < 0 ? order.length : i;
+    };
+    return [...loaded].sort((a, b) => rank(a.streamName) - rank(b.streamName));
+  }, [loaded, order]);
+
+  const persistOrder = useCallback((next: string[]) => {
+    setOrder(next);
+    fetch("/api/grid-order", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order: next }),
+    }).catch(() => {});
+  }, []);
+
+  const onReorderDrop = useCallback(
+    (targetName: string) => {
+      const from = dragName.current;
+      dragName.current = null;
+      setDraggingName(null);
+      setDragOverName(null);
+      if (!from || from === targetName) return;
+      const names = cameras.map((c) => c.streamName);
+      const fromIdx = names.indexOf(from);
+      const toIdx = names.indexOf(targetName);
+      if (fromIdx < 0 || toIdx < 0) return;
+      names.splice(fromIdx, 1);
+      names.splice(toIdx, 0, from);
+      persistOrder(names);
+    },
+    [cameras, persistOrder]
+  );
+
   const liveCount = cameras.filter((c) => liveMap[c.streamName]).length;
   const columns = Math.ceil(Math.sqrt(cameras.length || 1));
 
@@ -181,6 +226,19 @@ export default function VideoWall() {
               alert={cam.channel !== null ? (alerts[cam.channel]?.type ?? null) : null}
               onLiveChange={onLiveChange}
               onRename={onRename}
+              isDragging={draggingName === cam.streamName}
+              isDropTarget={dragOverName === cam.streamName && draggingName !== cam.streamName}
+              onReorderStart={() => {
+                dragName.current = cam.streamName;
+                setDraggingName(cam.streamName);
+              }}
+              onReorderOver={() => setDragOverName((prev) => (prev === cam.streamName ? prev : cam.streamName))}
+              onReorderDrop={() => onReorderDrop(cam.streamName)}
+              onReorderEnd={() => {
+                dragName.current = null;
+                setDraggingName(null);
+                setDragOverName(null);
+              }}
             />
           ))}
         </main>

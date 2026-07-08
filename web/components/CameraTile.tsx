@@ -14,6 +14,13 @@ interface Props {
   alert: string | null; // active event type, e.g. "VMD"
   onLiveChange: (name: string, live: boolean) => void;
   onRename?: (channel: number, name: string) => Promise<boolean>;
+  // Drag-and-drop reordering of the live wall
+  isDropTarget?: boolean;
+  isDragging?: boolean;
+  onReorderStart?: () => void;
+  onReorderOver?: () => void;
+  onReorderDrop?: () => void;
+  onReorderEnd?: () => void;
 }
 
 export default function CameraTile({
@@ -26,6 +33,12 @@ export default function CameraTile({
   alert,
   onLiveChange,
   onRename,
+  isDropTarget,
+  isDragging,
+  onReorderStart,
+  onReorderOver,
+  onReorderDrop,
+  onReorderEnd,
 }: Props) {
   const tileRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState("loading");
@@ -88,9 +101,41 @@ export default function CameraTile({
   };
 
   return (
-    <div className={alert ? "tile alert" : "tile"} ref={tileRef} onDoubleClick={toggleFullscreen}>
+    <div
+      className={`tile${alert ? " alert" : ""}${isDropTarget ? " drop-target" : ""}${isDragging ? " dragging" : ""}`}
+      ref={tileRef}
+      onDoubleClick={toggleFullscreen}
+      onDragOver={(e) => {
+        if (!onReorderOver) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        onReorderOver();
+      }}
+      onDrop={(e) => {
+        if (!onReorderDrop) return;
+        e.preventDefault();
+        onReorderDrop();
+      }}
+    >
       <StreamPlayer base={base} name={fullscreen && hdStream ? hdStream : streamName} onMode={onMode} />
       <div className="tile-actions">
+        {onReorderStart && (
+          <button
+            className="tile-btn drag-handle"
+            aria-label={`Reorder ${displayName}`}
+            title="Drag to reorder"
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.effectAllowed = "move";
+              // drag a ghost of the whole tile, not just the little handle
+              if (tileRef.current) e.dataTransfer.setDragImage(tileRef.current, 20, 20);
+              onReorderStart();
+            }}
+            onDragEnd={() => onReorderEnd?.()}
+          >
+            ⠿
+          </button>
+        )}
         {channel !== null && (
           <button
             className="tile-btn"

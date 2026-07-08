@@ -340,6 +340,30 @@ body {
   outline-offset: 1px;
 }
 
+.drag-handle {
+  cursor: grab;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.tile.dragging {
+  opacity: 0.5;
+}
+
+/* the tile the dragged camera will land on */
+.tile.drop-target::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--amber);
+  pointer-events: none;
+  z-index: 2;
+}
+
 /* ---------- playback ---------- */
 
 .playback {
