@@ -43,9 +43,9 @@ una web limpia que abrís desde cualquier navegador de tu red. Un
   latencia menor a un segundo. La grilla usa los substreams para respetar el
   presupuesto de ancho de banda del DVR; pantalla completa (doble click) cambia
   automáticamente al main stream de calidad completa.
-- **Reordenar arrastrando** — agarrá el ícono de agarre de un recuadro y soltalo
-  sobre otro para reordenar la grilla, así las cámaras que cubren la misma zona
-  quedan una al lado de la otra. La disposición se guarda y se comparte entre
+- **Reordenar con drag and drop** — arrastrá una cámara y soltala sobre otra para
+  reordenar la grilla, así las cámaras que cubren la misma zona quedan una al lado
+  de la otra. La disposición se guarda y se comparte entre
   todos los dispositivos que abren la app.
 - **Funciona con cámaras H.265** — los navegadores no decodifican H.265/HEVC por
   WebRTC ni MSE, así que go2rtc transcodifica los streams H.265 a H.264 bajo

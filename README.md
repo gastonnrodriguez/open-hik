@@ -41,8 +41,8 @@ wizard; no config files to edit.
 - **Live video wall** — every camera in a fullscreen grid, sub-second latency.
   The grid uses sub streams to respect the DVR's outgoing bandwidth budget;
   fullscreen (double-click) switches to the full-quality main stream.
-- **Drag to rearrange** — grab the grip handle on any tile and drop it on another
-  to reorder the grid, so cameras covering the same area sit side by side. The
+- **Drag and drop to rearrange** — drag a camera and drop it on another to
+  reorder the grid, so cameras covering the same area sit side by side. The
   layout is saved and shared across every device that opens the app.
 - **Works with H.265 cameras** — browsers can't decode H.265/HEVC over WebRTC or
   MSE, so go2rtc transcodes H.265 streams to H.264 on demand (H.264 streams pass
