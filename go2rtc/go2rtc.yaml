@@ -40,13 +40,13 @@ webrtc:
 # If you later switch a camera to H264 in the DVR, replace its `ffmpeg:` line with
 # the plain `rtsp://...` URL to drop the transcode.
 streams:
-  # Sub streams (grid) — all H265 on the DVR, so all transcoded.
-  cam-1: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/102#backchannel=0#video=h264
-  cam-2: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/202#backchannel=0#video=h264
-  cam-3: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/302#backchannel=0#video=h264
-  cam-4: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/402#backchannel=0#video=h264
-  # Main streams (fullscreen) — cam-1 is already H264 in the DVR, so direct.
-  cam-1-hd: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/101#backchannel=0
+  # Sub streams (grid) — H264 on the DVR, so used directly (no transcode).
+  cam-1: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/102#backchannel=0
+  cam-2: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/202#backchannel=0
+  cam-3: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/302#backchannel=0
+  cam-4: rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/402#backchannel=0
+  # Main streams (fullscreen) — all H265 on the DVR too, so all transcoded.
+  cam-1-hd: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/101#backchannel=0#video=hd
   cam-2-hd: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/201#backchannel=0#video=hd
   cam-3-hd: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/301#backchannel=0#video=hd
   cam-4-hd: ffmpeg:rtsp://${DVR_USER}:${DVR_PASS}@${DVR_HOST}:554/Streaming/Channels/401#backchannel=0#video=hd

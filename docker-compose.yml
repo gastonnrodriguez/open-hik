@@ -40,7 +40,9 @@ services:
     container_name: open-hik-web
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      # Host port is configurable (WEB_PORT in .env) so open-hik can share a
+      # machine with another app already using 3000. Container port stays 3000.
+      - "${WEB_PORT:-3000}:3000"
     environment:
       # Only needed when the browser can't reach go2rtc on <page-host>:1984
       - GO2RTC_PUBLIC_URL=${GO2RTC_PUBLIC_URL:-}
