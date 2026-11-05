@@ -8,6 +8,14 @@ interface Probe {
   channels: { id: number; name: string }[];
 }
 
+interface ChannelCodecs {
+  id: number;
+  main: string | null;
+  sub: string | null;
+}
+
+const isH265 = (c: string | null) => !!c && /265|hevc/i.test(c);
+
 export default function SettingsView() {
   // DVR connection
   const [host, setHost] = useState("");
@@ -25,6 +33,40 @@ export default function SettingsView() {
   const [confirm, setConfirm] = useState("");
   const [passMsg, setPassMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [passBusy, setPassBusy] = useState(false);
+
+  // stream encoding
+  const [codecs, setCodecs] = useState<ChannelCodecs[] | null>(null);
+  const [codecMsg, setCodecMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [codecBusy, setCodecBusy] = useState(false);
+
+  const loadCodecs = () =>
+    fetch("/api/settings/codecs")
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+        setCodecs(d.channels);
+      })
+      .catch((err) => setCodecMsg({ kind: "err", text: (err as Error).message }));
+
+  useEffect(() => {
+    loadCodecs();
+  }, []);
+
+  const switchSubToH264 = async () => {
+    setCodecBusy(true);
+    setCodecMsg(null);
+    try {
+      const res = await fetch("/api/settings/codecs", { method: "PUT" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      setCodecs(data.channels);
+      setCodecMsg({ kind: "ok", text: "Sub streams switched to H.264 — the grid now plays without transcoding." });
+    } catch (err) {
+      setCodecMsg({ kind: "err", text: (err as Error).message });
+    } finally {
+      setCodecBusy(false);
+    }
+  };
 
   useEffect(() => {
     fetch("/api/settings")
@@ -56,6 +98,7 @@ export default function SettingsView() {
       setProbe(data);
       setPass("");
       setDvrMsg({ kind: "ok", text: `Saved — connected to ${data.model}, streams re-synced.` });
+      loadCodecs();
     } catch (err) {
       setDvrMsg({ kind: "err", text: (err as Error).message });
     } finally {
@@ -148,6 +191,39 @@ export default function SettingsView() {
             {dvrBusy ? "Testing & saving…" : "Test & save"}
           </button>
         </form>
+
+        <div className="auth-card wide">
+          <h2 className="settings-title">Stream encoding</h2>
+          <p className="auth-note">
+            Browsers can&apos;t play H.265, so H.265 streams are transcoded to H.264 on this
+            server, which costs CPU. Recommended: keep the <b>main</b> stream on H.265 (it&apos;s
+            what the DVR records — roughly half the disk space of H.264) and switch the{" "}
+            <b>sub</b> stream (the live grid) to H.264, so the grid plays with no transcoding.
+            The sub stream isn&apos;t recorded, so this costs no disk space.
+          </p>
+          {codecs && (
+            <div className="probe-result">
+              <ul>
+                {codecs.map((c) => (
+                  <li key={c.id}>
+                    CH {String(c.id).padStart(2, "0")} · main {c.main ?? "?"} · sub {c.sub ?? "?"}
+                    {isH265(c.sub) ? " (transcoded)" : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {codecMsg && (
+            <p className={codecMsg.kind === "ok" ? "settings-ok" : "auth-error"}>{codecMsg.text}</p>
+          )}
+          {codecs && codecs.some((c) => isH265(c.sub)) ? (
+            <button type="button" onClick={switchSubToH264} disabled={codecBusy}>
+              {codecBusy ? "Switching…" : "Switch sub streams to H.264"}
+            </button>
+          ) : (
+            codecs && <p className="settings-ok">All sub streams are H.264 — no transcoding for the grid.</p>
+          )}
+        </div>
 
         <form className="auth-card wide" onSubmit={savePassword}>
           <h2 className="settings-title">App password</h2>

@@ -116,9 +116,31 @@ volumen Docker con nombre). El `.env` es opcional:
 | `DVR_HOST` / `DVR_USER` / `DVR_PASS` | Pre-cargar credenciales del DVR (URL-encodear caracteres especiales). El wizard las usa para prellenar. |
 | `GO2RTC_PUBLIC_URL` | Solo si el navegador no llega a go2rtc en `<host-de-la-página>:1984` (reverse proxy, etc.) |
 | `HOST_LAN_IP` | IP LAN anunciada como candidate de WebRTC para que otros dispositivos puedan ver. La completa `scripts/up.sh`; dejala vacía y se detecta sola. |
+| `WEB_PORT` | Puerto del host para la web (por defecto `3000`). Cambialo si otra app ya usa el 3000. |
 
 Se recomienda un usuario *operator* de solo lectura en el DVR en vez de admin —
 aunque en ese caso el DVR no va a permitir renombrar cámaras desde la UI.
+
+## Codificación recomendada en el DVR (H.264 vs H.265)
+
+Cada cámara tiene dos streams en el DVR, y cada uno tiene su propio códec:
+
+| Stream | Se usa para | Códec recomendado | Por qué |
+|---|---|---|---|
+| **Principal** (`x01`) | Grabación del DVR + pantalla completa | **H.265** | Ocupa más o menos la mitad que H.264 con la misma calidad: aproximadamente el doble de días de historial grabado. |
+| **Secundario** (`x02`) | Grilla en vivo | **H.264** | Lo reproduce cualquier navegador, así que la grilla no necesita transcodificar (cero CPU en el servidor). El secundario no se graba, así que no cuesta espacio en disco. |
+
+Los navegadores no reproducen H.265 por WebRTC/MSE, así que open-hik transcodifica
+a H.264 en el servidor cualquier stream en H.265. Funciona, pero con los
+secundarios en H.265 el servidor re-encodea todas las cámaras de la grilla todo el
+tiempo. Con la configuración recomendada solo se transcodifica la cámara que está
+en pantalla completa.
+
+No hace falta entrar a la web del DVR: en **Settings → Stream encoding** tocá
+**Switch sub streams to H.264**. open-hik cambia solo el códec en el DVR
+(resolución, fps y bitrate quedan igual) y vuelve a registrar los streams. El
+códec de cada stream se detecta solo cada vez que se registran (wizard o
+*Settings → DVR connection*).
 
 ## Notas de seguridad
 
@@ -149,11 +171,12 @@ aunque en ese caso el DVR no va a permitir renombrar cámaras desde la UI.
   así que una cámara en H.265 no se ve en la mayoría de las máquinas (una PC con
   HEVC por hardware quizás sí la reproduce — por eso pasa el clásico "acá anda y
   allá no"). go2rtc transcodifica H.265 a H.264 automáticamente: los streams se
-  envuelven en `ffmpeg:...#video=h264` en `go2rtc/go2rtc.yaml`. El transcode es
-  bajo demanda (solo mientras alguien mira esa cámara) y liviano, pero para **cero**
-  CPU pasá el **sub-stream** de la cámara a H.264 en el DVR (*Configuración →
-  Vídeo/Audio*, por cámara — el ajuste es por canal, no global) y sacale el
-  prefijo `ffmpeg:`.
+  envuelven en `ffmpeg:...#video=h264` (el wizard y *Settings* detectan el códec
+  de cada stream y lo hacen solos). Si las cámaras se ven en negro pero hay audio,
+  algún stream está en H.265 y no se está transcodificando: volvé a guardar
+  *Settings → DVR connection* para re-registrar los streams. Para no transcodificar
+  la grilla, ver [Codificación recomendada en el
+  DVR](#codificación-recomendada-en-el-dvr-h264-vs-h265).
 - **Video cortado / a tirones en clientes por Wi-Fi** — re-encodear H.265→H.264 sin
   tope de bitrate infla cada stream a ~2,5 Mbps (~10 Mbps para una grilla de 4),
   que el Wi-Fi pierde. El bloque `ffmpeg` de `go2rtc.yaml` capa el bitrate del

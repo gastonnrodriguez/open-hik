@@ -109,9 +109,30 @@ The wizard stores everything in `/data/openhik.json` inside the web container
 | `DVR_HOST` / `DVR_USER` / `DVR_PASS` | Pre-provision DVR credentials (URL-encode special characters). The wizard prefills from these. |
 | `GO2RTC_PUBLIC_URL` | Only if the browser can't reach go2rtc at `<page-host>:1984` (reverse proxy, etc.) |
 | `HOST_LAN_IP` | LAN IP advertised as the WebRTC candidate so other devices can view. Auto-filled by `scripts/up.sh`; leave empty and it's detected for you. |
+| `WEB_PORT` | Host port for the web UI (default `3000`). Change it if another app already uses 3000. |
 
 A read-only *operator* DVR user is recommended over admin — though renaming
 cameras from the UI then won't be permitted by the DVR.
+
+## Recommended DVR encoding (H.264 vs H.265)
+
+Each camera has two streams in the DVR, and each has its own codec setting:
+
+| Stream | Used for | Recommended codec | Why |
+|---|---|---|---|
+| **Main** (`x01`) | DVR recording + fullscreen | **H.265** | About half the disk space of H.264 at the same quality: roughly twice the days of recording history. |
+| **Sub** (`x02`) | Live grid | **H.264** | Every browser plays it, so the grid needs no transcoding (no server CPU). The sub stream isn't recorded, so this costs no disk space. |
+
+Browsers can't play H.265 over WebRTC/MSE, so open-hik transcodes any H.265
+stream to H.264 on the server. That works, but with the sub streams left on
+H.265 the server re-encodes every camera in the grid all the time. With the
+recommended setup only the one camera open in fullscreen is transcoded.
+
+You don't need to open the DVR's own web UI for this: go to **Settings →
+Stream encoding** and click **Switch sub streams to H.264**. open-hik changes
+only the codec on the DVR (resolution, frame rate and bitrate stay as they
+were) and re-registers the streams. Stream codecs are detected automatically
+whenever streams are registered (wizard or *Settings → DVR connection*).
 
 ## Security notes
 
@@ -142,10 +163,11 @@ cameras from the UI then won't be permitted by the DVR.
   camera left on H.265 shows nothing on most machines (a PC with hardware HEVC
   might play it, which is why "it works here but not there" happens). go2rtc
   transcodes H.265 to H.264 automatically: streams are wrapped in
-  `ffmpeg:...#video=h264` in `go2rtc/go2rtc.yaml`. Transcoding is on demand (only
-  while someone watches that camera) and cheap, but for **zero** CPU switch the
-  camera's **sub-stream** to H.264 in the DVR (*Configuration → Video/Audio*, per
-  camera — the setting is per channel, not global) and drop its `ffmpeg:` prefix.
+  `ffmpeg:...#video=h264` (the wizard and *Settings* detect each stream's codec
+  and do this for you). If the tiles are black but audio plays, a stream is H.265
+  and isn't being transcoded: re-save *Settings → DVR connection* to re-register
+  the streams. To avoid transcoding the grid at all, see
+  [Recommended DVR encoding](#recommended-dvr-encoding-h264-vs-h265).
 - **Choppy / stuttering video on Wi-Fi clients** — re-encoding H.265→H.264 without
   a bitrate cap balloons each stream to ~2.5 Mbps (~10 Mbps for a 4-camera grid),
   which Wi-Fi drops. The `ffmpeg` block in `go2rtc.yaml` caps the H.264 bitrate
