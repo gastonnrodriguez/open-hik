@@ -55,11 +55,28 @@ una web limpia que abrís desde cualquier navegador de tu red. Un
   snapshots de cada evento de movimiento que registró el DVR, **filtrable por
   personas o vehículos** en equipos AcuSense. Click para ver ese momento;
   descargalo como MP4.
-- **Reproducción de grabaciones** — navegá y reproducí lo grabado, por cámara y
-  día, con controles de transporte: play/pausa, cámara lenta (0.25x/0.5x),
-  botones de salto y línea de tiempo scrubbable. (El DVR transmite las
-  grabaciones a velocidad real, así que el avance rápido se hace saltando en
-  vez de reproducir a 2x.)
+- **Reproducción con línea de tiempo de 24 horas** — una sola barra por cámara y
+  día muestra lo grabado y, encima, cada evento de movimiento que registró el DVR,
+  coloreado según qué lo disparó (persona, vehículo, sin clasificar). Click en
+  cualquier punto para reproducir desde ahí, zoom de 24 h a 10 minutos con la
+  rueda o los presets, arrastrar para desplazar, saltar al evento anterior o
+  siguiente, o escribir una hora. Al cambiar de cámara se mantiene el mismo
+  momento. Los controles incluyen play/pausa, cámara lenta (0.25x/0.5x) y botones
+  de salto. (El DVR transmite las grabaciones a velocidad real, así que el avance
+  rápido se hace saltando en vez de reproducir a 2x.)
+- **Calendario de grabaciones** — el selector de fecha marca los días que el DVR
+  todavía tiene grabados, por cámara, así no elegís un día vacío.
+- **Exportación rápida de clips** — guardá un MP4 de 30 segundos a 30 minutos
+  desde el punto de reproducción. Los clips salen por la descarga de archivos del
+  DVR en lugar de RTSP, unas 30 veces más rápido que el tiempo real en LAN (un
+  clip de 5 minutos en unos 10 segundos), con el video sin recomprimir y el audio
+  convertido a AAC.
+- **Audio** — un botón de parlante en cada cámara en vivo (suena una a la vez) y
+  control de volumen en la reproducción, para DVRs con micrófono conectado.
+- **Estado del disco y del DVR** — el encabezado muestra el uso del disco, el
+  espacio libre y cuántos días de grabación se conservan, y se pone rojo si el DVR
+  informa una falla de disco. *Settings* agrega modelo, firmware, tiempo
+  encendido, carga de CPU/memoria y estado de cada disco.
 - **Alertas en tiempo real** — movimiento/sabotaje/pérdida de video resaltan la
   cámara afectada al instante, directo del stream de alertas del DVR.
 - **Renombrar cámaras** — editás el nombre en la grilla y se guarda en el DVR mismo.
@@ -187,13 +204,44 @@ códec de cada stream se detecta solo cada vez que se registran (wizard o
 
 ## Roadmap
 
+La API ISAPI del DVR ofrece más de lo que open-hik usa hoy. Esto se verificó
+contra un equipo real (iDS-7204HQHI-M1/S) y está esperando que alguien lo
+implemente — más o menos en orden de utilidad:
+
+- **Alertas de sistema** — mostrar errores de disco, fallas de grabación, accesos
+  ilegales y conflictos de IP. La app ya escucha el stream de alertas del DVR
+  (`/ISAPI/Event/notification/alertStream`) pero solo muestra movimiento,
+  sabotaje y pérdida de video.
+- **Cruce de línea e intrusión** — configurar y mostrar estos eventos
+  (`/ISAPI/Smart/LineDetection`, `/ISAPI/Smart/FieldDetection`). Mucho más
+  precisos que el movimiento general en una cámara que mira a la calle.
+- **Configuración de detección de movimiento** — editar la grilla de detección,
+  la sensibilidad y el filtro persona/vehículo desde la app
+  (`/ISAPI/System/Video/inputs/channels/<id>/motionDetection`).
+- **Búsqueda inteligente por región de la imagen** — encontrar movimiento dentro
+  de una zona dibujada sobre lo grabado (el DVR informa `isSupportSmartSearch`).
+- **Canal cero** — un solo stream compuesto con todas las cámaras en mosaico
+  (`/ISAPI/ContentMgmt/ZeroVideo/channels`), que bajaría la grilla en vivo de una
+  sesión del DVR por cámara a una sola.
+- **Ajustes de imagen** — brillo, contraste, texto en pantalla y máscaras de
+  privacidad (`/ISAPI/Image/channels/<id>`,
+  `/ISAPI/System/Video/inputs/channels/<id>/overlays`).
+- **Marcadores en grabaciones** — etiquetar momentos y buscarlos después (el DVR
+  informa `isSupportSearchRecordLabelByUTC`).
+- **Grabación manual y salidas de alarma** — iniciar una grabación a mano,
+  activar las salidas de relé (`/ISAPI/System/IO/outputs`).
+
+Fuera de la API del DVR:
+
 - Proxear go2rtc a través de la app autenticada
-- Búsqueda inteligente por región de la imagen
 - Controles PTZ para las cámaras que lo soporten
 - Presets de layout (ciclado 1×1, grillas custom)
 - i18n de la UI (inglés/español)
 
-Las contribuciones son bienvenidas — este proyecto existe justamente porque un
+¿Querés alguna? [Abrí un issue](https://github.com/gastonnrodriguez/open-hik/issues)
+para discutirla o tomarla, o mandá un pull request. Los endpoints varían entre
+modelos y versiones de firmware, así que indicá en qué equipo probaste. Las
+contribuciones son bienvenidas — este proyecto existe justamente porque un
 montón de hardware en perfecto estado quedó huérfano cuando murieron los plugins
 de navegador.
 

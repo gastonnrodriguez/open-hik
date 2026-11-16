@@ -50,10 +50,25 @@ wizard; no config files to edit.
 - **Smart search** — pick a time range and get a grid of snapshots for every
   motion event the DVR logged, **filtered by people or vehicles** on AcuSense
   devices. Click one to watch that moment; download it as MP4.
-- **Recording playback** — browse and play what the DVR recorded, per camera and
-  day, with transport controls: play/pause, slow motion (0.25x/0.5x), skip
-  buttons and a scrubbable timeline. (The DVR streams recordings at real time,
+- **Recording playback with a 24-hour timeline** — one bar per camera and day
+  shows what was recorded and, on top of it, every motion event the DVR logged,
+  coloured by what triggered it (person, vehicle, unclassified). Click anywhere
+  to play from there, zoom from 24 h down to 10 minutes with the wheel or the
+  presets, drag to pan, jump to the previous/next event, or type a time. Switching
+  cameras keeps you on the same moment. Transport controls cover play/pause, slow
+  motion (0.25x/0.5x) and skip buttons. (The DVR streams recordings at real time,
   so fast-forward is done by skipping rather than 2x playback.)
+- **Recording calendar** — the date picker marks the days the DVR still has
+  footage for, per camera, so you never pick an empty day.
+- **Fast clip export** — save an MP4 of 30 seconds to 30 minutes starting at the
+  playhead. Clips come through the DVR's file download instead of RTSP, roughly
+  30x faster than real time on a LAN (a 5-minute clip in about 10 seconds), with
+  the video untouched and the audio converted to AAC.
+- **Audio** — a speaker button on every live camera (one audible at a time) and a
+  volume control in playback, for DVRs that have a microphone wired in.
+- **Disk and DVR status** — the header shows disk usage, free space and how many
+  days of footage are kept, and turns red if the DVR reports a disk fault.
+  *Settings* adds model, firmware, uptime, CPU/memory load and per-disk state.
 - **Live event alerts** — motion/tamper/video-loss highlights the affected camera
   in real time, straight from the DVR's alert stream.
 - **Rename cameras** — edit a camera's name in the grid; it's saved to the DVR itself.
@@ -178,14 +193,44 @@ whenever streams are registered (wizard or *Settings → DVR connection*).
 
 ## Roadmap
 
+The DVR's ISAPI exposes more than open-hik uses today. These were checked
+against a real device (iDS-7204HQHI-M1/S) and are waiting for someone to build
+them — roughly in order of usefulness:
+
+- **System alerts** — surface disk errors, recording failures, illegal logins and
+  IP conflicts. The app already listens to the DVR's alert stream
+  (`/ISAPI/Event/notification/alertStream`) but only shows motion, tamper and
+  video loss.
+- **Line crossing and intrusion detection** — configure and display these events
+  (`/ISAPI/Smart/LineDetection`, `/ISAPI/Smart/FieldDetection`). Far more precise
+  than plain motion on a busy street-facing camera.
+- **Motion detection settings** — edit the detection grid, sensitivity and the
+  person/vehicle filter from the app
+  (`/ISAPI/System/Video/inputs/channels/<id>/motionDetection`).
+- **Smart search by image region** — find motion inside a drawn area of recorded
+  footage (the DVR reports `isSupportSmartSearch`).
+- **Zero channel** — one composite stream with every camera in a mosaic
+  (`/ISAPI/ContentMgmt/ZeroVideo/channels`), which would bring the live grid down
+  from one DVR session per camera to a single one.
+- **Image settings** — brightness, contrast, OSD text and privacy masks
+  (`/ISAPI/Image/channels/<id>`, `/ISAPI/System/Video/inputs/channels/<id>/overlays`).
+- **Recording bookmarks** — tag moments and search them later (the DVR reports
+  `isSupportSearchRecordLabelByUTC`).
+- **Manual recording and alarm outputs** — start a recording by hand, trigger the
+  relay outputs (`/ISAPI/System/IO/outputs`).
+
+Beyond the DVR's API:
+
 - Proxy go2rtc through the authenticated web app
-- Smart search by image region
 - PTZ controls for cameras that support them
 - Layout presets (1×1 cycling, custom grids)
 - i18n for the UI (English/Spanish)
 
-Contributions welcome — this project exists precisely because a lot of perfectly
-good hardware was orphaned by the death of browser plugins.
+Want one of these? [Open an issue](https://github.com/gastonnrodriguez/open-hik/issues)
+to discuss it or claim it, or send a pull request. Endpoints vary between models
+and firmware versions, so say which device you tested on. Contributions welcome —
+this project exists precisely because a lot of perfectly good hardware was
+orphaned by the death of browser plugins.
 
 ## Credits & license
 
