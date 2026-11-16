@@ -14,9 +14,43 @@ interface ChannelCodecs {
   sub: string | null;
 }
 
+interface DvrStatus {
+  model: string | null;
+  firmware: string | null;
+  uptimeSeconds: number | null;
+  cpuPercent: number | null;
+  memoryPercent: number | null;
+  disks: { id: string; name: string; type: string; status: string; capacityMB: number; freeMB: number }[];
+  oldestRecording: string | null;
+  deviceTime: string | null;
+  diskProblem: boolean;
+}
+
+function duration(seconds: number): string {
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  return d > 0 ? `${d} d ${h} h` : `${h} h ${Math.floor((seconds % 3600) / 60)} min`;
+}
+
+const gigabytes = (mb: number) => (mb >= 1024 * 1024 ? `${(mb / 1024 / 1024).toFixed(2)} TB` : `${Math.round(mb / 1024)} GB`);
+
 const isH265 = (c: string | null) => !!c && /265|hevc/i.test(c);
 
 export default function SettingsView() {
+  // DVR health
+  const [status, setStatus] = useState<DvrStatus | null>(null);
+  const [statusErr, setStatusErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/status")
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+        setStatus(d);
+      })
+      .catch((err) => setStatusErr((err as Error).message));
+  }, []);
+
   // DVR connection
   const [host, setHost] = useState("");
   const [httpPort, setHttpPort] = useState(80);
@@ -137,6 +171,72 @@ export default function SettingsView() {
     <>
       <Header />
       <div className="settings">
+        <div className="auth-card wide">
+          <h2 className="settings-title">DVR status</h2>
+          {statusErr && <p className="auth-error">Could not read the DVR: {statusErr}</p>}
+          {!status && !statusErr && <p className="auth-note">Reading the DVR…</p>}
+          {status && (
+            <>
+              <dl className="status-list">
+                <dt>Device</dt>
+                <dd>{status.model ?? "?"}</dd>
+                <dt>Firmware</dt>
+                <dd>{status.firmware ?? "?"}</dd>
+                {status.uptimeSeconds !== null && (
+                  <>
+                    <dt>Running for</dt>
+                    <dd>{duration(status.uptimeSeconds)}</dd>
+                  </>
+                )}
+                {status.cpuPercent !== null && (
+                  <>
+                    <dt>Load</dt>
+                    <dd>
+                      CPU {status.cpuPercent}%
+                      {status.memoryPercent !== null ? ` · memory ${status.memoryPercent}%` : ""}
+                    </dd>
+                  </>
+                )}
+                <dt>Recordings</dt>
+                <dd>
+                  {status.oldestRecording
+                    ? (() => {
+                        const now = Date.parse(`${status.deviceTime ?? new Date().toISOString().slice(0, 19)}Z`);
+                        const days = Math.floor((now - Date.parse(`${status.oldestRecording}Z`)) / 86400000);
+                        return `back to ${status.oldestRecording.replace("T", " ").slice(0, 16)} (${days} day${days === 1 ? "" : "s"})`;
+                      })()
+                    : "none found"}
+                </dd>
+              </dl>
+              {status.disks.length === 0 && <p className="auth-error">The DVR reports no disk — nothing is being recorded.</p>}
+              {status.disks.map((d) => {
+                const ok = /^(ok|idle)$/i.test(d.status);
+                const used = d.capacityMB > 0 ? Math.round(((d.capacityMB - d.freeMB) / d.capacityMB) * 100) : 0;
+                return (
+                  <div key={d.id} className="disk">
+                    <div className="disk-row">
+                      <span>
+                        {d.name} · {d.type} · {gigabytes(d.capacityMB)}
+                      </span>
+                      <span className={ok ? "disk-state ok" : "disk-state bad"}>{d.status}</span>
+                    </div>
+                    <div className="disk-bar" role="img" aria-label={`${used}% used`}>
+                      <span style={{ width: `${used}%` }} />
+                    </div>
+                    <p className="auth-note">
+                      {!ok
+                        ? "The DVR reports a problem with this disk — check it on the DVR; recording may have stopped."
+                        : d.freeMB === 0
+                          ? "Full, which is normal: the DVR records over the oldest footage."
+                          : `${gigabytes(d.freeMB)} free (${used}% used).`}
+                    </p>
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+
         <form className="auth-card wide" onSubmit={saveDvr}>
           <h2 className="settings-title">DVR connection</h2>
           <p className="auth-note">

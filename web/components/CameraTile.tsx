@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import SpeakerIcon from "@/components/SpeakerIcon";
 import StreamPlayer from "@/components/StreamPlayer";
 import { eventLabel } from "@/lib/useEvents";
 
@@ -22,6 +23,8 @@ interface Props {
   onReorderDrop?: () => void;
   onReorderEnd?: () => void;
 }
+
+const AUDIO_SOLO = "openhik:audio-solo";
 
 export default function CameraTile({
   streamName,
@@ -46,6 +49,21 @@ export default function CameraTile({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(displayName);
   const [saving, setSaving] = useState(false);
+  const [muted, setMuted] = useState(true);
+
+  // one camera audible at a time: unmuting a tile silences the others
+  useEffect(() => {
+    const onSolo = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== streamName) setMuted(true);
+    };
+    window.addEventListener(AUDIO_SOLO, onSolo);
+    return () => window.removeEventListener(AUDIO_SOLO, onSolo);
+  }, [streamName]);
+
+  const toggleSound = () => {
+    if (muted) window.dispatchEvent(new CustomEvent(AUDIO_SOLO, { detail: streamName }));
+    setMuted(!muted);
+  };
 
   const startEdit = () => {
     setDraft(displayName);
@@ -117,7 +135,12 @@ export default function CameraTile({
         onReorderDrop();
       }}
     >
-      <StreamPlayer base={base} name={fullscreen && hdStream ? hdStream : streamName} onMode={onMode} />
+      <StreamPlayer
+        base={base}
+        name={fullscreen && hdStream ? hdStream : streamName}
+        muted={muted}
+        onMode={onMode}
+      />
       <div className="tile-actions">
         {onReorderStart && (
           <button
@@ -145,6 +168,15 @@ export default function CameraTile({
             </svg>
           </button>
         )}
+        <button
+          className={muted ? "tile-btn" : "tile-btn active"}
+          onClick={toggleSound}
+          aria-label={`${muted ? "Unmute" : "Mute"} ${displayName}`}
+          aria-pressed={!muted}
+          title={muted ? "Sound on" : "Sound off"}
+        >
+          <SpeakerIcon muted={muted} />
+        </button>
         {channel !== null && (
           <button
             className="tile-btn"

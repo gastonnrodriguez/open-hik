@@ -1,37 +1,11 @@
-import { randomUUID } from "crypto";
-import { dvrConfigured, isapiFetch, xmlBlocks, xmlText } from "@/lib/isapi";
+import { dvrConfigured } from "@/lib/isapi";
+import { fetchMotionEvents, type MotionEvent } from "@/lib/motionLog";
 import { prefetchThumbnails } from "@/lib/media";
 import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export interface MotionEvent {
-  channel: number;
-  start: string;
-  end: string | null;
-  target: "human" | "vehicle" | "motion";
-}
-
-function searchXml(start: string, end: string, position: number): string {
-  return `<?xml version="1.0" encoding="utf-8"?>
-<CMSearchDescription version="2.0" xmlns="http://www.hikvision.com/ver20/XMLSchema">
-<searchID>${randomUUID()}</searchID>
-<metaId>log.std-cgi.com</metaId>
-<timeSpanList><timeSpan>
-<startTime>${start}</startTime>
-<endTime>${end}</endTime>
-</timeSpan></timeSpanList>
-<maxResults>40</maxResults>
-<searchResultPostion>${position}</searchResultPostion>
-</CMSearchDescription>`;
-}
-
-function classify(info: string): MotionEvent["target"] {
-  const s = info.toLowerCase();
-  if (s.includes("human")) return "human";
-  if (s.includes("vehicle")) return "vehicle";
-  return "motion";
-}
+export type { MotionEvent } from "@/lib/motionLog";
 
 /**
  * Motion events from the DVR log, AcuSense-classified when available.
@@ -52,45 +26,12 @@ export async function GET(req: Request) {
     return Response.json({ error: "Bad parameters" }, { status: 400 });
   }
 
-  const events: MotionEvent[] = [];
-  const openByChannel = new Map<number, MotionEvent>();
-  let scanned = 0;
-
+  let events: MotionEvent[];
   try {
-    for (let page = 0; page < 50; page++) {
-      const res = await isapiFetch("/ISAPI/ContentMgmt/logSearch", {
-        method: "POST",
-        headers: { "Content-Type": "application/xml" },
-        body: searchXml(start, end, scanned),
-      });
-      if (!res.ok) return Response.json({ error: `DVR HTTP ${res.status}` }, { status: 502 });
-      const xml = await res.text();
-      const items = xmlBlocks(xml, "searchMatchItem");
-      scanned += items.length;
-
-      for (const item of items) {
-        const metaId = xmlText(item, "metaId") || "";
-        const time = xmlText(item, "StartDateTime");
-        const local = (xmlText(item, "localID") || "").match(/(\d+)$/);
-        if (!time || !local) continue;
-        const channel = parseInt(local[1], 10);
-
-        if (metaId.includes("/Alarm/motionStart")) {
-          const info = xmlText(item, "additionInformation") || "";
-          const evt: MotionEvent = { channel, start: time, end: null, target: classify(info) };
-          events.push(evt);
-          openByChannel.set(channel, evt);
-        } else if (metaId.includes("/Alarm/motionStop")) {
-          const open = openByChannel.get(channel);
-          if (open && !open.end) open.end = time;
-          openByChannel.delete(channel);
-        }
-      }
-
-      if (xmlText(xml, "responseStatusStrg") !== "MORE" || items.length === 0) break;
-    }
-  } catch {
-    return Response.json({ error: "DVR unreachable" }, { status: 502 });
+    events = await fetchMotionEvents(start, end);
+  } catch (e) {
+    const msg = (e as Error).message;
+    return Response.json({ error: msg.startsWith("DVR HTTP") ? msg : "DVR unreachable" }, { status: 502 });
   }
 
   let out = events;

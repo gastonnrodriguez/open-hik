@@ -119,7 +119,11 @@ export default function SearchView() {
     setDownloading(true);
     try {
       const range = clipRange(selected);
-      const params = new URLSearchParams({ channel: String(selected.channel), ...range });
+      const params = new URLSearchParams({
+        channel: String(selected.channel),
+        ...range,
+        name: channels[selected.channel] || "",
+      });
       const res = await fetch(`/api/clip?${params}`);
       if (!res.ok) throw new Error();
       const blob = await res.blob();
@@ -129,7 +133,7 @@ export default function SearchView() {
       a.click();
       URL.revokeObjectURL(a.href);
     } catch {
-      setError("Clip download failed — the DVR may be out of bandwidth. Try again.");
+      setError("Clip download failed. Try again.");
     } finally {
       setDownloading(false);
     }
@@ -234,7 +238,7 @@ export default function SearchView() {
               </span>
               <span className="event-modal-actions">
                 <button onClick={download} disabled={downloading}>
-                  {downloading ? "Preparing… (runs at playback speed)" : "Download MP4"}
+                  {downloading ? "Preparing…" : "Download MP4"}
                 </button>
                 <button onClick={() => setSelected(null)}>Close</button>
               </span>

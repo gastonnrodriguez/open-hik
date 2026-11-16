@@ -112,7 +112,7 @@ export async function syncGo2rtcStreams(dvr: DvrConfig, channelIds: number[]): P
     for (const def of defs) {
       const direct = rtspUrl(dvr, `/Streaming/Channels/${def.stream}#backchannel=0`);
       const codec = (await streamCodec(dvr, def.stream)) || "";
-      const src = /265|hevc/i.test(codec) ? `ffmpeg:${direct}#video=${def.template}` : direct;
+      const src = /265|hevc/i.test(codec) ? `ffmpeg:${direct}#video=${def.template}#audio=copy` : direct;
       const url = `${GO2RTC}/api/streams?name=${encodeURIComponent(def.name)}&src=${encodeURIComponent(src)}`;
       const res = await fetch(url, { method: "PUT" });
       if (!res.ok) throw new Error(`go2rtc rejected stream ${def.name} (HTTP ${res.status})`);

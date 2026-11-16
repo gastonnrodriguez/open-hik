@@ -48,8 +48,15 @@ export async function POST(req: Request) {
       () => {}
     );
     await new Promise((r) => setTimeout(r, 400));
+    // Two sources: the recording as-is, plus an H264 transcode of that same
+    // stream. Recordings are often H265, which most browsers can't decode over
+    // WebRTC/MSE; go2rtc only falls through to the second source when the
+    // client can't take the first, and the transcode reads from go2rtc itself,
+    // so the DVR still sees a single playback session.
+    const fallback = `ffmpeg:${name}#video=hd#audio=copy`;
     const res = await fetch(
-      `${GO2RTC}/api/streams?name=${encodeURIComponent(name)}&src=${encodeURIComponent(src)}`,
+      `${GO2RTC}/api/streams?name=${encodeURIComponent(name)}` +
+        `&src=${encodeURIComponent(src)}&src=${encodeURIComponent(fallback)}`,
       { method: "PUT" }
     );
     if (!res.ok) return Response.json({ error: `go2rtc HTTP ${res.status}` }, { status: 502 });
