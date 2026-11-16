@@ -1,0 +1,28 @@
+name: Feature request
+description: Propose a feature, or claim one from the roadmap (English or Spanish).
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What do you want to do
+      description: The situation you're in, not just the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How it could work
+      description: If you know the ISAPI endpoint involved, mention it.
+  - type: input
+    id: model
+    attributes:
+      label: Device model and firmware
+      description: Features depend on what the device supports.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you build it?
+      options:
+        - label: I'd like to implement this myself
+        - label: I can test it on my device

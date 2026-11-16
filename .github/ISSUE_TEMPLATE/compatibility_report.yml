@@ -1,0 +1,51 @@
+name: Compatibility report
+description: Tell us whether open-hik works on your Hikvision device (English or Spanish).
+title: "[Compatibility] <model>"
+labels: ["compatibility"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks! This takes five minutes and helps every other owner of your model.
+  - type: input
+    id: model
+    attributes:
+      label: Device model
+      placeholder: iDS-7204HQHI-M1/S
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version
+      description: Shown in open-hik under Settings → DVR status.
+      placeholder: V4.70.102 build 220215
+    validations:
+      required: true
+  - type: input
+    id: cameras
+    attributes:
+      label: Cameras
+      description: How many, and analog or IP.
+      placeholder: 4 analog
+  - type: checkboxes
+    id: works
+    attributes:
+      label: What works
+      options:
+        - label: Setup wizard connects to the device
+        - label: Live video wall
+        - label: Fullscreen HD
+        - label: Audio
+        - label: Playback timeline
+        - label: Motion events on the timeline
+        - label: People / vehicle classification
+        - label: Recording calendar
+        - label: Clip export
+        - label: Smart search
+        - label: Disk and DVR status
+        - label: Live event alerts
+  - type: textarea
+    id: notes
+    attributes:
+      label: What doesn't work, or anything odd
+      description: Error messages help. Remove passwords, serial numbers and public IPs.

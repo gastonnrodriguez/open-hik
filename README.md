@@ -4,6 +4,12 @@
 
 🇪🇸 [Leer en español](README.es.md)
 
+> **Contributors wanted.** open-hik is tested on one DVR model and has a list of
+> features the hardware already supports that nobody has built yet. Tell us
+> [whether it works on your device](https://github.com/gastonnrodriguez/open-hik/issues/new?template=compatibility_report.yml),
+> pick something from the [Roadmap](#roadmap), or read
+> [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
+
 ## Why this exists
 
 Hikvision's embedded web UI (V4.x and older) depends on an ActiveX/NPAPI browser
@@ -102,9 +108,18 @@ Open `http://localhost:3000` (or `http://<host-ip>:3000` from another machine)
 and follow the wizard: create an app password, point it at your DVR, done. The
 header shows the address other devices should use — click it to copy.
 
-Tested with an iDS-7204HQHI-M1/S (firmware V4.70.102, web V4.0.1), but it should
-work with any Hikvision device that speaks RTSP + ISAPI — which is practically
-all of them. Reports from other models are very welcome.
+### Tested devices
+
+It should work with any Hikvision device that speaks RTSP + ISAPI — which is
+practically all of them — but only what's in this table has been confirmed:
+
+| Model | Firmware | Status | Reported by |
+|---|---|---|---|
+| iDS-7204HQHI-M1/S (4-channel AcuSense DVR) | V4.70.102 | Everything works | maintainer |
+
+Have a different model? A
+[compatibility report](https://github.com/gastonnrodriguez/open-hik/issues/new?template=compatibility_report.yml)
+takes five minutes and gets your device added here.
 
 ### Development without Docker
 
@@ -227,8 +242,10 @@ Beyond the DVR's API:
 - i18n for the UI (English/Spanish)
 
 Want one of these? [Open an issue](https://github.com/gastonnrodriguez/open-hik/issues)
-to discuss it or claim it, or send a pull request. Endpoints vary between models
-and firmware versions, so say which device you tested on. Contributions welcome —
+to discuss it or claim it, or send a pull request —
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the setup and what these DVRs are picky
+about. Endpoints vary between models and firmware versions, so say which device
+you tested on. Contributions welcome —
 this project exists precisely because a lot of perfectly good hardware was
 orphaned by the death of browser plugins.
 

@@ -4,6 +4,13 @@
 
 🇬🇧 [Read in English](README.md)
 
+> **Se buscan contribuciones.** open-hik está probado en un solo modelo de DVR y
+> tiene una lista de funciones que el hardware ya soporta y nadie construyó
+> todavía. Contanos
+> [si funciona en tu equipo](https://github.com/gastonnrodriguez/open-hik/issues/new?template=compatibility_report.yml),
+> elegí algo del [Roadmap](#roadmap) o leé
+> [CONTRIBUTING.es.md](CONTRIBUTING.es.md) para empezar.
+
 ## Motivación
 
 La web embebida de los Hikvision (V4.x y anteriores) depende de un plugin
@@ -111,9 +118,18 @@ Abrí `http://localhost:3000` (o `http://<ip-del-host>:3000` desde otra máquina
 y seguí el wizard: contraseña para la app, datos del DVR, listo. El header muestra
 la dirección que deben usar los otros dispositivos — click para copiarla.
 
-Probado con un iDS-7204HQHI-M1/S (firmware V4.70.102, web V4.0.1), pero debería
-funcionar con cualquier Hikvision que hable RTSP + ISAPI — es decir, casi todos.
-Los reportes desde otros modelos son muy bienvenidos.
+### Equipos probados
+
+Debería funcionar con cualquier Hikvision que hable RTSP + ISAPI — es decir, casi
+todos — pero solo está confirmado lo que figura en esta tabla:
+
+| Modelo | Firmware | Estado | Reportado por |
+|---|---|---|---|
+| iDS-7204HQHI-M1/S (DVR AcuSense de 4 canales) | V4.70.102 | Funciona todo | mantenedor |
+
+¿Tenés otro modelo? Un
+[reporte de compatibilidad](https://github.com/gastonnrodriguez/open-hik/issues/new?template=compatibility_report.yml)
+lleva cinco minutos y suma tu equipo a esta lista.
 
 ### Desarrollo sin Docker
 
@@ -239,7 +255,9 @@ Fuera de la API del DVR:
 - i18n de la UI (inglés/español)
 
 ¿Querés alguna? [Abrí un issue](https://github.com/gastonnrodriguez/open-hik/issues)
-para discutirla o tomarla, o mandá un pull request. Los endpoints varían entre
+para discutirla o tomarla, o mandá un pull request —
+[CONTRIBUTING.es.md](CONTRIBUTING.es.md) explica el entorno y las mañas de estos
+DVR. Los endpoints varían entre
 modelos y versiones de firmware, así que indicá en qué equipo probaste. Las
 contribuciones son bienvenidas — este proyecto existe justamente porque un
 montón de hardware en perfecto estado quedó huérfano cuando murieron los plugins

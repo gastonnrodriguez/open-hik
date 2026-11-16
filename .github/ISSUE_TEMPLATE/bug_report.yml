@@ -1,0 +1,44 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly (English or Spanish).
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: And what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Playback
+        2. Click ...
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Device model and firmware
+      description: Shown under Settings → DVR status.
+      placeholder: iDS-7204HQHI-M1/S, V4.70.102
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and OS
+      placeholder: Chrome 131 on Ubuntu 24.04
+  - type: input
+    id: version
+    attributes:
+      label: open-hik version
+      description: Commit hash (`git rev-parse --short HEAD`), and whether you run Docker or scripts/dev.sh.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Browser console, `docker logs open-hik-web`, `docker logs open-hik-go2rtc`. Remove passwords, serial numbers and public IPs — RTSP URLs in logs contain credentials.
+      render: text

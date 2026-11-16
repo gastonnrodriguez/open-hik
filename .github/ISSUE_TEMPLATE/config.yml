@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Roadmap — features waiting to be built
+    url: https://github.com/gastonnrodriguez/open-hik#roadmap
+    about: Pick one, open an issue to claim it, and send a pull request.
+  - name: Contributing guide / Guía para contribuir
+    url: https://github.com/gastonnrodriguez/open-hik/blob/main/CONTRIBUTING.md
+    about: Development setup and what a pull request needs. También en español.
